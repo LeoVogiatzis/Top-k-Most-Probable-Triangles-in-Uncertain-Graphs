@@ -1,7 +1,7 @@
 import pandas as pd
 from graphframes import *
 from pyspark.sql import SparkSession
-
+import numpy as np
 
 # Import subpackage examples here explicitly so that this module can be
 # run directly with spark-submit.
@@ -14,6 +14,16 @@ def edge_list_pre_processing():
             fout.write(line.replace('\t', ','))
     for chunk in pd.read_csv("edges.csv", chunksize=10):
         print(chunk)
+
+
+def probability_distribution():
+    frame = pd.DataFrame()
+    for chunk in pd.read_csv("edges.csv", chunksize=10):
+        print(chunk)
+        chunk['probability'] = np.random.uniform(0, 1, chunk.shape[0])
+        print(chunk.head())
+        frame = pd.concat([frame, chunk])
+    frame.to_csv(r'D:\Top-k-Most-Probable-Triangles-in-Uncertain-Graphs\data\edge_list_with_probabilities.csv')
 
 
 def main():
@@ -35,7 +45,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    probability_distribution()
 
 # rels = pys.read.csv("D:\Top-k-Most-Probable-Triangles-in-Uncertain-Graphs\newfile.csv", header=True)
 # reversed_rels = (rels.withColumn("newSrc", rels.dst)
