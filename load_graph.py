@@ -6,6 +6,31 @@ from pyspark.sql import SparkSession
 formatter = 'com.databricks.spark.csv'
 
 
+def findTriangles(edges):
+    import networkx as nx
+    G = nx.Graph()
+    for x in edges:
+        G.add_edge(x[0], x[1])
+    result = []
+    done = set()  #
+    for n in G:
+        done.add(n)  #
+        nbrdone = set()  #
+        nbrs = set(G[n])
+        for nbr in nbrs:
+            if nbr in done:  #
+                continue  #
+            nbrdone.add(nbr)  #
+            for both in nbrs.intersection(G[nbr]):
+                if both in done or both in nbrdone:  #
+                    continue  #
+                result.append((n, nbr, both))
+    return result
+
+
+# triangles = findTriangles(edge_list)
+
+
 def main():
     # edge_list_pre_processing()
     spark = SparkSession.builder.appName('graph').getOrCreate()
@@ -19,36 +44,48 @@ def main():
     # print(unionDF.show())
     g = GraphFrame(vertices, edges)
     ## Take a look at the DataFrames
+    triangles = findTriangles(edges)
+    x = 1
     g.vertices.show()
     g.edges.show()
     ## Check the number of edges of each vertex
     g.degrees.show()
 
 
-def create_graph():
-    spark = SparkSession.builder.appName('graph').getOrCreate()
-    combined = spark.read.format(formatter).options(delimiter=' ', header='false', inferSchema=True) \
-        .load('edgelist.txt').withColumnRenamed('C0', 'src').withColumnRenamed('C1', 'dst')
-    combined = combined.dropDuplicates(['_c0', '_c1'])
-
-    vdf = (combined.select(combined['_c0']).union(combined.select(combined['_c1']))).distinct()
-
-    # create a dataframe with only one column
-    new_vertices = vdf.select(vdf['_c0'].alias('id')).distinct()
-
-    new_edges = combined.join(new_vertices, combined['_c0'] == new_vertices['id'], 'left')
-    new_edges = new_edges.select(new_edges['_c1'], new_edges['id'].alias('src'))
-
-    new_edges = new_edges.join(new_vertices, new_edges['_c1'] == new_vertices['id'], 'left')
-    new_edges = new_edges.select(new_edges['src'], new_edges['id'].alias('dst'))
-
-    # created graph only with connections among vertices
-    gf = GraphFrame(new_vertices, new_edges)
-    print(gf.cache())
+def get_metrics(gf):
     gf.vertices.show()
     gf.edges.show()
     ## Check the number of edges of each vertex
     gf.degrees.show()
+    result = gf.triangleCount()
+    (result.sort("count", ascending=False)
+     .filter('count > 0')
+     .show())
+
+
+def create_graph():
+    spark = SparkSession.builder.appName('graph').getOrCreate()
+    combined = spark.read.format(formatter).options(delimiter=' ', header='false', inferSchema=True) \
+        .load('edgelist.txt').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed('_c2',
+                                                                                                                'probs')
+    combined = combined.dropDuplicates(['src', 'dst'])
+
+    vdf = (combined.select(combined['src']).union(combined.select(combined['dst']))).distinct()
+
+    # create a dataframe with only one column
+    new_vertices = vdf.select(vdf['src'].alias('id')).distinct()
+
+    # new_edges = combined.join(new_vertices, combined['src'] == new_vertices['id'], 'left')
+    # new_edges = new_edges.select(new_edges['dst'], new_edges['id'].alias('src'))
+    #
+    # new_edges = new_edges.join(new_vertices, new_edges['dst'] == new_vertices['id'], 'left')
+    # new_edges = new_edges.select(new_edges['src'], new_edges['id'].alias('dst'))
+
+    # created graph only with connections among vertices
+    gf = GraphFrame(new_vertices, combined)
+    print(gf.cache())
+
+    get_metrics(gf)
     return gf
 
 
