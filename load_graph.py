@@ -31,6 +31,15 @@ def findTriangles(edges):
 # triangles = findTriangles(edge_list)
 
 
+def get_triangles(gf):
+    pass
+    # for each edge(u, v):
+    #     for each vertex w:
+    #         if (v, w) is an edge and (w, u) is an edge:
+    #             return true
+    # return false
+
+
 def main():
     # edge_list_pre_processing()
     spark = SparkSession.builder.appName('graph').getOrCreate()
@@ -61,6 +70,38 @@ def get_metrics(gf):
     (result.sort("count", ascending=False)
      .filter('count > 0')
      .show())
+    data = gf.triplets.toPandas()
+    # get_triangles(gf)
+    print(data.hist)
+
+
+def get_neighbors():
+    x = list(x)
+    vertices = []
+    edges_list = []
+    neighbors_list = []
+    # for each "line" in x
+    # find vertex and its connections ("neighbors")
+    for el in x:
+        vertex = el[1][0]
+        edges = el[1][1]
+        edges_list.extend(edges)
+        vertices.append(vertex)
+        neighbors = []
+        for edge in edges:
+            neighbors.append(edge[1])
+        neighbors_list.append(neighbors)
+
+    for index, vertex in enumerate(vertices):
+        temp_list = []
+        for dst in neighbors_list[index]:
+            if dst in vertices:
+                temp_list.append(dst)
+        neighbors_list[index] = temp_list
+    # neighbors = []
+    # for index, vertex in enumerate(new_vertices)
+    #     local_neighbors = []
+    #     for dst in neighbors
 
 
 def create_graph():
@@ -69,7 +110,7 @@ def create_graph():
         .load('edgelist.txt').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed('_c2',
                                                                                                                 'probs')
     combined = combined.dropDuplicates(['src', 'dst'])
-
+    
     vdf = (combined.select(combined['src']).union(combined.select(combined['dst']))).distinct()
 
     # create a dataframe with only one column
@@ -86,11 +127,17 @@ def create_graph():
     print(gf.cache())
 
     get_metrics(gf)
-    return gf
+
+    return gf, new_vertices, combined
 
 
 if __name__ == '__main__':
-    gf = create_graph()
+    gf, new_vertices, edges = create_graph()
+    # a = 2
+    # p_v = df.rdd.map(lambda x: (x[1], x[0])).repartition(2)
+    # p_v_e = p_v.map(lambda x: (x[1], x[0])).join(grouped_E).map(lambda x: (x[1][0], (x[0], x[1][1])))
+    # partitioned_vertices = p_v_e.partitionBy(numPartitions)
+    # sampled = partitioned_vertices.mapPartitions(lambda x: get_neighbors(x, a))
     # edge_list_pre_processing()
     # probability_distribution()
     # main()
