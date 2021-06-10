@@ -27,6 +27,7 @@ def driverPartitionAlgorithm(edges):
         no_triangles = 0
 
         def findTriangles(edges):
+
             import networkx as nx
             G = nx.Graph()
             for x in edges:
@@ -76,7 +77,7 @@ def driverPartitionAlgorithm(edges):
 #     .appName("example").getOrCreate()
 
 if __name__ == '__main__':
-    # spark = SparkSession.builder.appName('graph').getOrCreate()
+    spark = SparkSession.builder.appName('graph').getOrCreate()
     # combined = spark.read.format(formatter).options(delimiter=' ', header='false', inferSchema=True) \
     #     .load('edgelist.txt').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed('_c2',
     #                                                                                                             'probs')
@@ -88,10 +89,10 @@ if __name__ == '__main__':
     # new_vertices = vdf.select(vdf['src'].alias('id')).distinct()
     # gf = GraphFrame(new_vertices, combined)
     # global edges, vectices
-    spark = SparkSession \
-        .builder.master('local[*]') \
-        .appName("example-spark").getOrCreate()
-    global edges, vectices
+    # spark = SparkSession \
+    #     .builder.master('local[*]') \
+    #     .appName("example-spark").getOrCreate()
+    # global edges, vectices
     edges = spark.createDataFrame([(1, 2), (1, 3), (2, 3), (3, 4), (3, 5), (4, 5)])
     vectices = spark.createDataFrame([(1,), (2,), (3,), (4,), (5,), (6,)])
     #
