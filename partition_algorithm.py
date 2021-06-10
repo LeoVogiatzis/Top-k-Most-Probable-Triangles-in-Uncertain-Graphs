@@ -95,6 +95,7 @@ if __name__ == '__main__':
     # global edges, vectices
     edges = spark.createDataFrame([(1, 2), (1, 3), (2, 3), (3, 4), (3, 5), (4, 5)])
     vectices = spark.createDataFrame([(1,), (2,), (3,), (4,), (5,), (6,)])
+
     #
     #
     # combined = spark.read.format(formatter).options(delimiter=',', header='false', inferSchema=True) \

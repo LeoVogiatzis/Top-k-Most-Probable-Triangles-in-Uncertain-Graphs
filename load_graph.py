@@ -1,4 +1,5 @@
 from graphframes import *
+
 from pyspark.sql import SparkSession
 
 # Import subpackage examples here explicitly so that this module can be
@@ -110,17 +111,13 @@ def create_graph():
         .load('edgelist.txt').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed('_c2',
                                                                                                                 'probs')
     combined = combined.dropDuplicates(['src', 'dst'])
-    
+
     vdf = (combined.select(combined['src']).union(combined.select(combined['dst']))).distinct()
 
     # create a dataframe with only one column
     new_vertices = vdf.select(vdf['src'].alias('id')).distinct()
-
-    # new_edges = combined.join(new_vertices, combined['src'] == new_vertices['id'], 'left')
-    # new_edges = new_edges.select(new_edges['dst'], new_edges['id'].alias('src'))
-    #
-    # new_edges = new_edges.join(new_vertices, new_edges['dst'] == new_vertices['id'], 'left')
-    # new_edges = new_edges.select(new_edges['src'], new_edges['id'].alias('dst'))
+    print(new_vertices.show())
+    print(combined.show())
 
     # created graph only with connections among vertices
     gf = GraphFrame(new_vertices, combined)
