@@ -30,16 +30,21 @@ def create_graph():
 
 
 def find_triangles(edges):
+    """
+
+    :param edges: edgelist
+    :return: map reduce node_iterator we get the list and return all triangles
+    """
     edges = edges.rdd. \
-        map(lambda x: (x[0], x[1]) if (x[0] < x[1]) else (x[1], x[0]))
+        map(lambda x: (x[0], x[1]) if (x[0] < x[1]) else (x[1], x[0]))  # .sortBy(lambda x: -x[2])
+    edges.foreach(print)
+    print('-------------')
     output_map1 = edges.map(lambda x: (x[0], [x[1]])
-    #                      .sortBy(lambda x: -x[2])
     if x[0] < x[1]
     else (x[1], [x[0]])) \
         .filter(lambda x: x != None) \
         .reduceByKey(lambda x, y: x + y)
-
-    # .foreach(print)
+    output_map1.foreach(print)
 
     def reducer1(x):
         output = []
@@ -49,9 +54,17 @@ def find_triangles(edges):
         return output
 
     output_reducer1 = output_map1.flatMap(reducer1)
+    print('--------------')
+    output_reducer1.foreach(print)
     output_reducer2 = edges.map(lambda x: ((x[0], x[1]), ["*"]))
+    print('--------------')
+    output_reducer2.foreach(print)
     output_reducer2 = output_reducer2.union(output_reducer1)
+    print('--------------')
+    output_reducer2.foreach(print)
     output = output_reducer2.reduceByKey(lambda x, y: x + y).filter(lambda y: len(y) > 1).collect()
+    print('--------------')
+    print(output)
 
     def generate_triplets(x):
         output = []
@@ -63,30 +76,39 @@ def find_triangles(edges):
                     output.append((tupples[0][0], tupples[0][1], vertex))
 
         yield output
+        print(output)
+
     # print(f'triangles:{generateTriplets(output)}')
     return list(generate_triplets(output))
 
 
 def driver_node_iterator(edges):
+    """
+    Driver
+    :return: yield the asked results
+    """
     return find_triangles(edges)
+
+
+def get_edges(spark):
+    """
+
+    :param spark: Read edge_list using DataFrame API
+    :return: edges, vertices
+    """
+    edges = spark.read.format(formatter).options(delimiter=' ', header='false', inferSchema=True) \
+        .load('rdy_geo100k.csv').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed(
+        '_c2',
+        'probs')
+    # partition_edges = edges2.partitionBy(4)
+    vertices = (edges.select(edges['src']).union(edges.select(edges['dst']))).distinct()
+    return edges, vertices
 
 
 if __name__ == '__main__':
     spark, sc = spark_init()
-    global edges, vectices
-    # spark = SparkSession \
-    #     .builder.master('local[*]') \
-    #     .appName("example-spark").getOrCreate()
-    edges, vectices = create_graph()
+    edges, vectices = get_edges(spark)
 
-    edges = spark.createDataFrame([(1, 2, 0.3), (1, 3, 0.3), (2, 3, 0.4),
-                                   (3, 4, 0.3), (3, 5, 0.3), (4, 5, 0.3),
-                                   (2, 4, 0.3), (4, 6, 0.3), (5, 6, 0.3), (1, 5, 0.3), (2, 5, 0.5)])
-    vectices = spark.createDataFrame([(1,), (2,), (3,), (4,), (5,), (6,)])
-
-    # edges.sort(lambda x: x[2]).collect().foreach(print)
-    # bSorted = edges.sortBy(lambda a: -a[2]).foreach(print)
-    # edges = edges.sortBy(_._2).toDF().toPandas()
     import time
 
     currentMilliTime = lambda: int(round(time.time() * 1000))

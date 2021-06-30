@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def edge_list_pre_processing():
@@ -7,8 +7,6 @@ def edge_list_pre_processing():
             'edges10K.txt', 'w') as fout:
         for line in fin:
             fout.write(line.replace('\t', ','))
-    for chunk in pd.read_csv("edges.csv", chunksize=1000):
-        print(chunk)
 
 
 def probability_distribution():
@@ -20,6 +18,7 @@ def probability_distribution():
         #print(chunk.head())
         frame = pd.concat([frame, chunk])
     frame.to_csv(r'D:\Top-k-Most-Probable-Triangles-in-Uncertain-Graphs\data\edge_list_with_probabilities.csv')
+
 
 if __name__ == '__main__':
     edge_list_pre_processing()

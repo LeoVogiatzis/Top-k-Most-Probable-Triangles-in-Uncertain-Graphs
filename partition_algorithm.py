@@ -1,9 +1,16 @@
+# from itertools import chain.
+
 from pyspark.sql import SparkSession
 
 formatter = 'com.databricks.spark.csv'
-from graphframes import *
+
 
 def driverPartitionAlgorithm(edges):
+    """
+    Triangle count simple implemenation
+    :param edges: edgelist
+    :return:
+    """
     p = 4
 
     def mapper(x):
@@ -22,6 +29,10 @@ def driverPartitionAlgorithm(edges):
 
     mapper_output = (edges.rdd.flatMap(lambda x: mapper(x))
                      .reduceByKey(lambda x, y: x + y))
+    mapper_output.foreach(print)
+    print('-----------------')
+    x = edges.rdd.flatMap(lambda x: mapper(x))
+    x.foreach(print)
 
     def reducer(edge_list):
         no_triangles = 0
@@ -69,44 +80,23 @@ def driverPartitionAlgorithm(edges):
         return ("*", no_triangles)
 
     reducer_output = mapper_output.map(lambda x: reducer(x[1]))
-    return reducer_output.values().sum()
+    print(reducer_output.values().sum())
 
-
-# spark = SparkSession \
-#     .builder.master('local[1]') \
-#     .appName("example").getOrCreate()
 
 if __name__ == '__main__':
     spark = SparkSession.builder.appName('graph').getOrCreate()
-    # combined = spark.read.format(formatter).options(delimiter=' ', header='false', inferSchema=True) \
-    #     .load('edgelist.txt').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed('_c2',
-    #                                                                                                             'probs')
-    # edges = combined.dropDuplicates(['src', 'dst'])
-    #
-    # vdf = (combined.select(combined['src']).union(combined.select(combined['dst']))).distinct()
-    #
-    # # create a dataframe with only one column
-    # new_vertices = vdf.select(vdf['src'].alias('id')).distinct()
-    # gf = GraphFrame(new_vertices, combined)
-    # global edges, vectices
-    # spark = SparkSession \
-    #     .builder.master('local[*]') \
-    #     .appName("example-spark").getOrCreate()
-    # global edges, vectices
-    edges = spark.createDataFrame([(1, 2), (1, 3), (2, 3), (3, 4), (3, 5), (4, 5)])
-    vectices = spark.createDataFrame([(1,), (2,), (3,), (4,), (5,), (6,)])
 
-    #
-    #
-    # combined = spark.read.format(formatter).options(delimiter=',', header='false', inferSchema=True) \
-    #     .load('edges.csv').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed('_c2',
-    #                                                                                                          'probs')
-    # edges = combined.dropDuplicates(['src', 'dst'])
-    #
-    # vdf = (combined.select(combined['src']).union(combined.select(combined['dst']))).distinct()
-    #
-    # # create a dataframe with only one column
-    # new_vertices = vdf.select(vdf['src'].alias('id')).distinct()
+    edges = spark.read.format(formatter).options(delimiter=' ', header='false', inferSchema=True) \
+        .load('edgelist.txt').withColumnRenamed('_c0', 'src').withColumnRenamed('_c1', 'dst').withColumnRenamed(
+        '_c2',
+        'probs')
+    vdf = (edges.select(edges['src']).union(edges.select(edges['dst']))).distinct()
+
+    # create a dataframe with only one column
+    new_vertices = vdf.select(vdf['src'].alias('id')).distinct()
+    print(new_vertices.show())
+    print(edges.show())
+
     import time
 
     currentMilliTime = lambda: int(round(time.time() * 1000))
